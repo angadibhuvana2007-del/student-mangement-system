@@ -1,0 +1,83 @@
+
+name: Student Management CI CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+
+  # CONTINUOUS INTEGRATION
+
+  test:
+    name: Test Student Management System
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check HTML File
+        run: test -f public/index.html
+
+      - name: Check CSS File
+        run: test -f public/style.css
+
+      - name: Check JavaScript File
+        run: test -f public/script.js
+
+      - name: Check JavaScript Syntax
+        run: node --check public/script.js
+
+      - name: Verify Website Content
+        run: grep -q "Student Management System" public/index.html
+
+      - name: Testing Completed
+        run: echo "All project checks passed successfully!"
+
+  # CONTINUOUS DEPLOYMENT
+
+  deploy:
+    name: Deploy Website
+    needs: test
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Website Files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy Website
+        id: deployment
+        uses: actions/deploy-pages@v4
